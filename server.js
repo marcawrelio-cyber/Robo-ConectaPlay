@@ -5,8 +5,14 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 const TARGET = 'https://panel-web.resell.media/#/login?redirect=/info/accountSecurity';
 app.disable('x-powered-by');
-app.get('/', (_req, res) => res.json({app:'Robo ConectaPlay',status:'online',mode:'diagnostic',provider:'Reseller System',testEndpoint:'/teste-reseller',realActions:false}));
+
+app.get('/', (_req, res) => res.json({app:'Robo ConectaPlay',status:'online',version:'reseller-login-preparacao-v2',provider:'Reseller System',testEndpoint:'/teste-reseller',configEndpoint:'/config-login',realActions:false}));
 app.get('/health', (_req,res) => res.json({ok:true}));
+
+app.get('/config-login', (_req,res) => {
+  res.json({ok:true,usernameConfigured:Boolean(process.env.RESELLER_USERNAME),passwordConfigured:Boolean(process.env.RESELLER_PASSWORD),note:'Somente informa se as variaveis estao presentes. Nunca retorna credenciais.',loginAttempted:false});
+});
+
 app.get('/teste-reseller', async (_req,res) => {
   let browser;
   try {
