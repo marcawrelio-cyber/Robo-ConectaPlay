@@ -3,31 +3,24 @@ import { chromium } from 'playwright';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const TARGET = 'https://problack.sigma.vin/';
-let running = false;
+const TARGET = 'https://panel-web.resell.media/#/login?redirect=/info/accountSecurity';
 app.disable('x-powered-by');
-app.get('/', (_req, res) => res.json({app:'Robo ConectaPlay',status:'online',mode:'diagnostic',provider:'PROBLACK',realActions:false,testEndpoint:'/teste-problack'}));
+app.get('/', (_req, res) => res.json({app:'Robo ConectaPlay',status:'online',mode:'diagnostic',provider:'Reseller System',testEndpoint:'/teste-reseller',realActions:false}));
 app.get('/health', (_req,res) => res.json({ok:true}));
-app.get('/teste-problack', async (_req,res) => {
-  if (running) return res.status(429).json({ok:false,error:'Teste em andamento. Aguarde.'});
-  running = true;
+app.get('/teste-reseller', async (_req,res) => {
   let browser;
   try {
-    browser = await chromium.launch({headless:true,args:['--no-sandbox']});
+    browser = await chromium.launch({headless:true});
     const page = await browser.newPage({viewport:{width:1280,height:800}});
     const response = await page.goto(TARGET,{waitUntil:'domcontentloaded',timeout:30000});
     await page.waitForTimeout(3500);
-    const title = await page.title();
-    const finalUrl = page.url();
-    const text = (await page.locator('body').innerText().catch(()=>'' )).slice(0,350);
-    const status = response?.status() ?? null;
-    res.json({ok:status !== null && status < 400,test:'abertura da página pública',httpStatus:status,title,finalUrl,bodyPreview:text,loginAttempted:false,realActions:false,note:'Este teste não faz login nem contorna proteções.'});
-  } catch (e) {
-    console.error('PROBLACK diagnostic:',e.message);
-    res.status(503).json({ok:false,test:'abertura da página pública',error:e.message.slice(0,300),loginAttempted:false,realActions:false});
-  } finally {
-    await browser?.close().catch(()=>{});
-    running=false;
-  }
+    const result = await page.evaluate(() => ({
+      title:document.title,
+      visibleInputs:Array.from(document.querySelectorAll('input')).filter(e=>e.getClientRects().length>0).map(e=>({type:e.type||'text',placeholder:e.getAttribute('placeholder')||'',autocomplete:e.getAttribute('autocomplete')||''})),
+      visibleButtons:Array.from(document.querySelectorAll('button')).filter(e=>e.getClientRects().length>0).map(e=>(e.innerText||e.getAttribute('aria-label')||'').trim().slice(0,60)).filter(Boolean).slice(0,12)
+    }));
+    res.json({ok:true,test:'public login page structure',httpStatus:response?.status()??null,finalUrl:page.url(),...result,loginAttempted:false,realActions:false,note:'Diagnostico sem usuario, senha ou leitura de codigo de verificacao.'});
+  } catch(e) {res.status(200).json({ok:false,error:String(e.message||e).slice(0,400),loginAttempted:false,realActions:false});}
+  finally {if(browser) await browser.close().catch(()=>{});}
 });
-app.listen(port,'0.0.0.0',()=>console.log(`Robo ConectaPlay ouvindo na porta ${port}`));
+app.listen(port,'0.0.0.0',()=>console.log(`Robo ConectaPlay online na porta ${port}`));
