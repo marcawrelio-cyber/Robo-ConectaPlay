@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const TARGET = 'https://problack.sigma.vin/';
+const ALVO = 'https://problack.sigma.vin/#/resellers';
 let running = false;
 
 app.disable('x-powered-by');
