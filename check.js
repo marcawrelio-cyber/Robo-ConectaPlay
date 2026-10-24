@@ -1,6 +1,11 @@
 import { chromium } from 'playwright';
-const browser = await chromium.launch({headless:true});
-const page = await browser.newPage();
-await page.goto('about:blank');
-console.log('Playwright OK:', await page.title());
-await browser.close();
+let browser;
+try {
+  browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  console.log('Playwright Chromium iniciou com sucesso.');
+} catch (err) {
+  console.error('Falha ao iniciar Chromium:', err.message);
+  process.exitCode = 1;
+} finally {
+  await browser?.close();
+}
